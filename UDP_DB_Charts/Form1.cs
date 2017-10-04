@@ -100,7 +100,7 @@ namespace UDP_DB_Charts
         private void Form1_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             
-            //backgroundWorker1.CancelAsync();
+            backgroundWorker1.CancelAsync();
         }
     }
 }
