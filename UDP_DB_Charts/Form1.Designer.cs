@@ -29,8 +29,6 @@
         private void InitializeComponent()
         {
             this.listBox1 = new System.Windows.Forms.ListBox();
-            this.dataRxBgWorker = new System.ComponentModel.BackgroundWorker();
-            this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.SuspendLayout();
             // 
             // listBox1
@@ -40,10 +38,6 @@
             this.listBox1.Name = "listBox1";
             this.listBox1.Size = new System.Drawing.Size(260, 238);
             this.listBox1.TabIndex = 1;
-            // 
-            // backgroundWorker1
-            // 
-            this.backgroundWorker1.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorker1_DoWork);
             // 
             // Form1
             // 
@@ -61,8 +55,6 @@
         #endregion
 
         private System.Windows.Forms.ListBox listBox1;
-        public System.ComponentModel.BackgroundWorker dataRxBgWorker;
-        private System.ComponentModel.BackgroundWorker backgroundWorker1;
     }
 }
 

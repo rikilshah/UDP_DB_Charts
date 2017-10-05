@@ -11,96 +11,91 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Collections;
+using System.Data.Sql;
+using System.Data.SqlClient;
 
 namespace UDP_DB_Charts
 {
+    
     public partial class Form1 : Form
     {
-        delegate void StringArgReturningVoidDelegate(string text);
-        
+        private UdpClient client;
+        public string conString = "user id=admin;" +
+           "password=123;server=roarbit-pc\\sqlexpress;" +
+           "database=udpdb;" +
+           "connection timeout=30;" +
+           "Trusted_Connection=yes;";
+
         public Form1()
         {
             InitializeComponent();
+            //Create UDPClient and Start Listening
+            client = new UdpClient(9090);
+            client.BeginReceive(DataReceived, null);
         }
+
         private void Form1_Load(object sender, EventArgs e)
         {
-            Thread theUdpServer = new Thread(new ThreadStart(serverThread));
+
+            
+        }
+
+        private void DataReceived(IAsyncResult ar)
+        {
+            IPEndPoint ip = new IPEndPoint(IPAddress.Any, 8090);
+            byte[] data;
+
             try
             {
-                theUdpServer.Start();
+                data = client.EndReceive(ar, ref ip);
+
+                if(data.Length == 0)
+                {
+                    return;
+                }
+                client.BeginReceive(DataReceived, null);
             }
-            catch(Exception err)
+            catch(ObjectDisposedException)
             {
-                MessageBox.Show(err.Message);
-                theUdpServer.Abort();
+                return;
             }
+            this.BeginInvoke((Action<IPEndPoint, string>)DataReceivedUI, ip, Encoding.ASCII.GetString(data));
         }
 
-        public void serverThread()
+        private void DataReceivedUI(IPEndPoint ipendpoint, string data)
         {
-            IPEndPoint ipep = new IPEndPoint(IPAddress.Any, 8090);
-            UdpClient client = new UdpClient(ipep);
-            string passText;
-            while(true)
-            {
-                IPEndPoint RemoteIPEndPoint = new IPEndPoint(IPAddress.Any, 0);
-                Byte[] receiveBytes = client.Receive(ref RemoteIPEndPoint);
-                string returnData = Encoding.ASCII.GetString(receiveBytes);
-                //Gui Element for Text Output
-                //SetText(RemoteIPEndPoint.Address.ToString() + ":" + returnData.ToString());
-                passText = RemoteIPEndPoint.Address.ToString() + ":" + returnData.ToString();
-                this.backgroundWorker1.RunWorkerAsync(passText);
-                
-            }
-        }
+            this.listBox1.Items.Add(ipendpoint.ToString() + ":" + data + Environment.NewLine);
 
-        private void SetText(string text)
-        {
-            if(this.listBox1.InvokeRequired)
+            using (SqlConnection connection = new SqlConnection(conString))
             {
-                StringArgReturningVoidDelegate d = new StringArgReturningVoidDelegate(SetText);
-                this.Invoke(d, new object[] { text });
-            }
-            else
-            {
-                this.listBox1.Items.Add(text);
-            }
-        }
+                string commandString = "INSERT INTO baseTable(Date,Status) Values(@Date,@Status)";
+                SqlCommand myCommand = new SqlCommand(commandString,connection);
 
-        private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
-        {
-            //this.listBox1.Items.Add(e.Argument);
-            string text = (string)e.Argument;
-            e.Result = text;
-            Console.WriteLine(e.Result);
-        }
+                myCommand.Parameters.Clear();
+                myCommand.Connection = connection;
+                myCommand.Parameters.Add(new SqlParameter("Date", data.ToString()));
+                myCommand.Parameters.Add(new SqlParameter("Status", 1));
 
-        private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            if (e.Cancelled)
-            {
-                // The user canceled the operation.
-                MessageBox.Show("Operation was canceled");
-            }
-            else if (e.Error != null)
-            {
-                // There was an error during the operation.
-                string msg = String.Format("An error occurred: {0}", e.Error.Message);
-                MessageBox.Show(msg);
-            }
-            else
-            {
-                // The operation completed normally.
-                string msg = String.Format("Result = {0}", e.Result);
-                MessageBox.Show(msg);
-                Console.WriteLine("Result is {0} ",e.Result);
-            }
-        }
+                try
+                {
+                    connection.Open();
+                    int rowAffec = myCommand.ExecuteNonQuery();
+                    Console.WriteLine("RowsAffected: {0}", rowAffec);
+                }
+                catch(Exception error)
+                {
+                    Console.WriteLine(error.Message);
+                }
 
-        private void Form1_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-            
-           // backgroundWorker1.CancelAsync();
+                try
+                {
+                    connection.Close();
+                }
+                catch(Exception err)
+                {
+                    Console.WriteLine(err.Message);
+                }
+            }
         }
     }
 }
