@@ -20,9 +20,9 @@ namespace UDP_DB_Charts
     public partial class Form1 : Form
     {
         private UdpClient client;
-        public string conString = "user id=admin;" +
-           "password=123;server=roarbit-pc\\sqlexpress;" +
-           "database=udpdb;" +
+        public string conString = "user id=;" +       //Add SQL Server Details as per your Network
+           "password=;server=;" +
+           "database=;" +
            "connection timeout=30;" +
            "Trusted_Connection=yes;";
 
@@ -30,8 +30,8 @@ namespace UDP_DB_Charts
         {
             InitializeComponent();
             //Create UDPClient and Start Listening
-            client = new UdpClient(9090);
-            client.BeginReceive(DataReceived, null);
+            client = new UdpClient(9090);   // Listening Port Can be set here
+            client.BeginReceive(DataReceived, null); //Asynchronous Call to Data Receive loop, Event Driven
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -42,8 +42,8 @@ namespace UDP_DB_Charts
 
         private void DataReceived(IAsyncResult ar)
         {
-            IPEndPoint ip = new IPEndPoint(IPAddress.Any, 8090);
-            byte[] data;
+            IPEndPoint ip = new IPEndPoint(IPAddress.Any, 8090); //Ip address of Server machine
+            byte[] data; //Buffer for receiving Data
 
             try
             {
